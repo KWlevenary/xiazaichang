@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>下载畅 v2.2.0</title>
+<style>
+    /* ============ 全局重置 ============ */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    :root {
+        --primary: #6366f1;
+        --primary-light: #818cf8;
+        --primary-dark: #4f46e5;
+        --accent: #22d3ee;
+        --accent-2: #a855f7;
+        --dark: #0f172a;
+        --text: #1e293b;
+        --text-light: #64748b;
+        --bg: #f8fafc;
+    }
+    body {
+        font-family: 'Inter', 'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif;
+        background: #0a0e1a;
+        color: #e2e8f0;
+        line-height: 1.7;
+        overflow-x: hidden;
+        position: relative;
+        min-height: 100vh;
+    }
+
+    /* ============ 动态渐变背景 ============ */
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background:
+            radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.25) 0%, transparent 50%),
+            radial-gradient(circle at 80% 30%, rgba(168, 85, 247, 0.2) 0%, transparent 50%),
+            radial-gradient(circle at 50% 80%, rgba(34, 211, 238, 0.18) 0%, transparent 50%);
+        z-index: -2;
+        animation: bgShift 20s ease-in-out infinite;
+    }
+    @keyframes bgShift {
+        0%, 100% { transform: scale(1) rotate(0deg); }
+        50% { transform: scale(1.15) rotate(3deg); }
+    }
+    /* 网格线背景 */
+    body::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(99, 102, 241, 0.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(99, 102, 241, 0.06) 1px, transparent 1px);
+        background-size: 60px 60px;
+        z-index: -1;
+        mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+        -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+    }
+
+    /* ============ 鼠标跟随光晕 ============ */
+    .cursor-glow {
+        position: fixed;
+        width: 500px;
+        height: 500px;
+        border-radius: 50%;
+        pointer-events: none;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+        transform: translate(-50%, -50%);
+        transition: opacity 0.3s;
+        z-index: 0;
+        mix-blend-mode: screen;
+    }
+
+    /* ============ 滚动进度条 ============ */
+    .scroll-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 3px;
+        width: 0%;
+        background: linear-gradient(90deg, #6366f1, #22d3ee, #a855f7);
+        z-index: 1000;
+        transition: width 0.1s ease-out;
+        box-shadow: 0 0 12px rgba(99, 102, 241, 0.8);
+    }
+
+    /* ============ 顶部导航 ============ */
+    nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        padding: 1rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 100;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        background: rgba(10, 14, 26, 0.6);
+        border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+        transform: translateY(-100%);
+        animation: navSlide 0.8s 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes navSlide { to { transform: translateY(0); } }
+    .nav-logo {
+        font-size: 1.3rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #818cf8, #22d3ee);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .nav-logo::before {
+        content: '';
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #818cf8, #22d3ee);
+        box-shadow: 0 0 12px #818cf8;
+        animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.3); opacity: 0.7; }
+    }
+    .nav-links { display: flex; gap: 2rem; }
+    .nav-links a {
+        color: #cbd5e1;
+        text-decoration: none;
+        font-size: 0.95rem;
+        font-weight: 500;
+        position: relative;
+        transition: color 0.3s;
+    }
+    .nav-links a::after {
+        content: '';
+        position: absolute;
+        bottom: -6px;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: linear-gradient(90deg, #818cf8, #22d3ee);
+        transition: width 0.3s;
+    }
+    .nav-links a:hover { color: #fff; }
+    .nav-links a:hover::after { width: 100%; }
+
+    /* ============ Hero 区域 ============ */
+    .hero {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 8rem 2rem 4rem;
+        position: relative;
+        z-index: 1;
+    }
+    .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1.2rem;
+        border-radius: 999px;
+        background: rgba(99, 102, 241, 0.12);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        font-size: 0.85rem;
+        color: #a5b4fc;
+        margin-bottom: 2rem;
+        opacity: 0;
+        animation: fadeUp 0.8s 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .hero-badge .dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: #22d3ee;
+        box-shadow: 0 0 12px #22d3ee;
+        animation: pulse 2s infinite;
+    }
+    .hero h1 {
+        font-size: clamp(2.5rem, 7vw, 5.5rem);
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        line-height: 1.05;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(135deg, #fff 0%, #a5b4fc 50%, #22d3ee 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        background-size: 200% 200%;
+        animation: fadeUp 0.9s 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards, gradientShift 4s ease infinite;
+    }
+    @keyframes gradientShift {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+    }
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(40px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .hero p {
+        font-size: clamp(1rem, 2vw, 1.25rem);
+        color: #94a3b8;
+        max-width: 640px;
+        margin-bottom: 2.5rem;
+        opacity: 0;
+        animation: fadeUp 0.9s 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .hero-buttons {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        opacity: 0;
+        animation: fadeUp 0.9s 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 1rem 2.2rem;
+        border-radius: 14px;
+        font-size: 1.05rem;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, #6366f1, #a855f7);
+        color: white;
+        box-shadow: 0 10px 30px -8px rgba(99, 102, 241, 0.6);
+    }
+    .btn-primary::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, #818cf8, #22d3ee);
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: -1;
+    }
+    .btn-primary:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.8);
+    }
+    .btn-primary:hover::before { opacity: 1; }
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.05);
+        color: #e2e8f0;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+    }
+    .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-3px);
+        border-color: rgba(99, 102, 241, 0.5);
+    }
+    .btn svg { width: 20px; height: 20px; }
+
+    /* 浮动装饰元素 */
+    .floating-orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(60px);
+        opacity: 0.5;
+        z-index: -1;
+        animation: float 8s ease-in-out infinite;
+    }
+    .orb-1 { width: 300px; height: 300px; background: #6366f1; top: 10%; left: 5%; }
+    .orb-2 { width: 250px; height: 250px; background: #a855f7; top: 30%; right: 8%; animation-delay: 2s; }
+    .orb-3 { width: 350px; height: 350px; background: #22d3ee; bottom: 5%; left: 40%; animation-delay: 4s; }
+    @keyframes float {
+        0%, 100% { transform: translate(0, 0); }
+        50% { transform: translate(30px, -40px); }
+    }
+
+    /* 滚动提示 */
+    .scroll-hint {
+        position: absolute;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #64748b;
+        font-size: 0.85rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        opacity: 0;
+        animation: fadeUp 1s 1.5s forwards;
+    }
+    .scroll-hint .mouse {
+        width: 24px; height: 38px;
+        border: 2px solid #475569;
+        border-radius: 12px;
+        position: relative;
+    }
+    .scroll-hint .mouse::before {
+        content: '';
+        position: absolute;
+        top: 6px; left: 50%;
+        width: 3px; height: 6px;
+        background: #818cf8;
+        border-radius: 2px;
+        transform: translateX(-50%);
+        animation: scrollWheel 1.6s infinite;
+    }
+    @keyframes scrollWheel {
+        0% { transform: translate(-50%, 0); opacity: 1; }
+        100% { transform: translate(-50%, 12px); opacity: 0; }
+    }
+
+    /* ============ 通用 Section ============ */
+    section { padding: 6rem 2rem; position: relative; z-index: 1; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .section-header {
+        text-align: center;
+        margin-bottom: 4rem;
+    }
+    .section-label {
+        display: inline-block;
+        padding: 0.35rem 1rem;
+        border-radius: 999px;
+        background: rgba(34, 211, 238, 0.1);
+        color: #22d3ee;
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+        border: 1px solid rgba(34, 211, 238, 0.2);
+    }
+    .section-title {
+        font-size: clamp(1.8rem, 4vw, 3rem);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin-bottom: 1rem;
+        color: #f1f5f9;
+    }
+    .section-desc {
+        color: #94a3b8;
+        font-size: 1.05rem;
+        max-width: 640px;
+        margin: 0 auto;
+    }
+
+    /* ============ 功能卡片 ============ */
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+    .feature-card {
+        padding: 2rem;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    .feature-card.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .feature-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+                    rgba(99, 102, 241, 0.15), transparent 40%);
+        opacity: 0;
+        transition: opacity 0.5s;
+        pointer-events: none;
+    }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-card:hover {
+        border-color: rgba(99, 102, 241, 0.4);
+        transform: translateY(-8px);
+        box-shadow: 0 30px 60px -20px rgba(99, 102, 241, 0.4);
+    }
+    .feature-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15));
+        border: 1px solid rgba(99, 102, 241, 0.25);
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .feature-card:hover .feature-icon {
+        transform: scale(1.1) rotate(-5deg);
+    }
+    .feature-icon svg {
+        width: 28px;
+        height: 28px;
+        stroke: #a5b4fc;
+        stroke-width: 2;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+    .feature-card h3 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        color: #f1f5f9;
+    }
+    .feature-card p {
+        color: #94a3b8;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    /* ============ 版本亮点（时间线） ============ */
+    .timeline {
+        position: relative;
+        max-width: 800px;
+        margin: 0 auto;
+        padding-left: 2rem;
+    }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(180deg, #6366f1, #22d3ee, transparent);
+    }
+    .timeline-item {
+        position: relative;
+        padding: 1.5rem 0 1.5rem 2rem;
+        opacity: 0;
+        transform: translateX(-30px);
+        transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .timeline-item.visible {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -2rem;
+        top: 2rem;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #6366f1;
+        border: 3px solid #0a0e1a;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2), 0 0 20px #6366f1;
+        transform: translateX(-8px);
+    }
+    .timeline-item h4 {
+        font-size: 1.05rem;
+        color: #f1f5f9;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+    .timeline-item p {
+        color: #94a3b8;
+        font-size: 0.95rem;
+    }
+    .timeline-tag {
+        display: inline-block;
+        padding: 0.15rem 0.7rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-right: 0.5rem;
+        background: rgba(34, 211, 238, 0.15);
+        color: #22d3ee;
+    }
+
+    /* ============ 下载区域 ============ */
+    .download-section {
+        text-align: center;
+        padding: 6rem 2rem;
+    }
+    .download-card {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 3rem 2rem;
+        border-radius: 32px;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.1));
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 40px 80px -30px rgba(99, 102, 241, 0.5);
+    }
+    .download-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: conic-gradient(from 0deg, transparent, rgba(99, 102, 241, 0.15), transparent 30%);
+        animation: rotate 8s linear infinite;
+        z-index: -1;
+    }
+    @keyframes rotate { to { transform: rotate(360deg); } }
+    .download-card h2 {
+        font-size: clamp(1.6rem, 4vw, 2.5rem);
+        font-weight: 800;
+        margin-bottom: 1rem;
+        color: #f1f5f9;
+    }
+    .download-card p {
+        color: #94a3b8;
+        margin-bottom: 2rem;
+        font-size: 1.05rem;
+    }
+    .btn-large {
+        padding: 1.2rem 3rem;
+        font-size: 1.15rem;
+        border-radius: 16px;
+    }
+    .download-info {
+        margin-top: 1.5rem;
+        color: #64748b;
+        font-size: 0.85rem;
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .download-info span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    /* ============ 页脚 ============ */
+    footer {
+        padding: 3rem 2rem;
+        text-align: center;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+    footer a {
+        color: #818cf8;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    footer a:hover { color: #22d3ee; }
+
+    /* ============ 滚动显现动画 ============ */
+    .reveal {
+        opacity: 0;
+        transform: translateY(40px);
+        transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* ============ 响应式 ============ */
+    @media (max-width: 768px) {
+        nav { padding: 1rem; }
+        .nav-links { gap: 1rem; font-size: 0.85rem; }
+        section { padding: 4rem 1.2rem; }
+        .features-grid { grid-template-columns: 1fr; }
+        .hero-buttons { flex-direction: column; width: 100%; }
+        .btn { width: 100%; justify-content: center; }
+    }
+</style>
+</head>
+<body>
+
+<!-- 滚动进度条 -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- 鼠标跟随光晕 -->
+<div class="cursor-glow" id="cursorGlow"></div>
+
+<!-- 顶部导航 -->
+<nav>
+    <div class="nav-logo">下载畅</div>
+    <div class="nav-links">
+        <a href="#features">功能</a>
+        <a href="#changelog">更新</a>
+        <a href="#download">下载</a>
+    </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+    <div class="floating-orb orb-1"></div>
+    <div class="floating-orb orb-2"></div>
+    <div class="floating-orb orb-3"></div>
+
+    <div class="hero-badge">
+        <span class="dot"></span>
+        v2.2.0 正式发布
+    </div>
+    <h1>下载畅<br>极速下载，畅享无限</h1>
+    <p>全新升级的多线程下载器，集成 Bilibili 视频下载、代理加速、自定义壁纸，让每一次下载都快得畅快淋漓。</p>
+    <div class="hero-buttons">
+        <a href="#download" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            立即下载
+        </a>
+        <a href="#features" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 16 16 12 12 8"/>
+                <line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+            了解更多
+        </a>
+    </div>
+
+    <div class="scroll-hint">
+        <div class="mouse"></div>
+        <span>向下滚动</span>
+    </div>
+</section>
+
+<!-- 功能亮点 -->
+<section id="features">
+    <div class="container">
+        <div class="section-header reveal">
+            <div class="section-label">核心功能</div>
+            <h2 class="section-title">为速度而生的每一个细节</h2>
+            <p class="section-desc">从引擎到界面，每一处都经过精心打磨，只为带给你丝滑的下载体验。</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card" data-tilt>
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                </div>
+                <h3>多线程加速</h3>
+                <p>智能分段并发下载，充分利用带宽，突破单线程瓶颈，速度提升数倍。</p>
+            </div>
+
+            <div class="feature-card" data-tilt>
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                        <line x1="8" y1="21" x2="16" y2="21"/>
+                        <line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                </div>
+                <h3>Bilibili 视频下载</h3>
+                <p>内置 yt-dlp 解析引擎，支持一键下载 B 站视频，自动合并音视频流。</p>
+            </div>
+
+            <div class="feature-card" data-tilt>
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="2" y1="12" x2="22" y2="12"/>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </svg>
+                </div>
+                <h3>代理加速支持</h3>
+                <p>配置 SOCKS5 / HTTP 代理，轻松绕过网络瓶颈，跨境下载同样快如闪电。</p>
+            </div>
+
+            <div class="feature-card" data-tilt>
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                </div>
+                <h3>自定义壁纸</h3>
+                <p>支持随机壁纸、透明度与模糊度调节，打造专属于你的个性化界面。</p>
+            </div>
+
+            <div class="feature-card" data-tilt>
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2a10 10 0 1 0 10 10"/>
+                        <path d="M12 6v6l4 2"/>
+                    </svg>
+                </div>
+                <h3>断点续传</h3>
+                <p>意外中断也能从断点继续，进度永久保存，无需从头再来。</p>
+            </div>
+
+            <div class="feature-card" data-tilt>
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                </div>
+                <h3>优雅界面</h3>
+                <p>基于 Fluent Design 打造，圆角、阴影、流畅动画，视觉体验如丝般顺滑。</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 更新日志 -->
+<section id="changelog">
+    <div class="container">
+        <div class="section-header reveal">
+            <div class="section-label">更新日志</div>
+            <h2 class="section-title">v2.2.0 全新升级</h2>
+            <p class="section-desc">每一次更新，都为了离完美更近一步。</p>
+        </div>
+
+        <div class="timeline">
+            <div class="timeline-item reveal">
+                <h4><span class="timeline-tag">新增</span>Bilibili 视频下载</h4>
+                <p>集成 yt-dlp 解析引擎，支持 B 站视频一键下载，自动合并音视频流。</p>
+            </div>
+            <div class="timeline-item reveal">
+                <h4><span class="timeline-tag">优化</span>代理加速</h4>
+                <p>支持 SOCKS5 与 HTTP 代理，有效提升跨境下载速度，绕过网络瓶颈。</p>
+            </div>
+            <div class="timeline-item reveal">
+                <h4><span class="timeline-tag">修复</span>中文路径打开</h4>
+                <p>解决 Windows 下中文文件名无法通过“打开文件”按钮启动的问题。</p>
+            </div>
+            <div class="timeline-item reveal">
+                <h4><span class="timeline-tag">优化</span>设置页面性能</h4>
+                <p>延迟加载非关键卡片，设置页面打开速度显著提升，感谢名单固定底部。</p>
+            </div>
+            <div class="timeline-item reveal">
+                <h4><span class="timeline-tag">升级</span>UI 细节</h4>
+                <p>启动画面更流畅，版本号更新为 v2.2.0，整体视觉细节进一步打磨。</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 下载区 -->
+<section id="download" class="download-section">
+    <div class="container">
+        <div class="download-card reveal">
+            <h2>准备好体验极速下载了吗？</h2>
+            <p>立即下载 下载畅 v2.2.0，开启你的高速下载之旅。</p>
+            <a href="https://github.com/yourname/your-repo/releases" class="btn btn-primary btn-large">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                下载 v2.2.0
+            </a>
+            <div class="download-info">
+                <span>💻 支持 Windows 10 / 11</span>
+                <span>🎁 完全免费</span>
+                <span>🔄 持续更新</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 页脚 -->
+<footer>
+    <p>© 2026 下载畅 · 由 <a href="#">你的名字</a> 匠心打造</p>
+    <p style="margin-top: 0.6rem;">
+        <a href="https://github.com/yourname/your-repo" target="_blank">GitHub</a> ·
+        <a href="#">反馈问题</a> ·
+        <a href="#">更新日志</a>
+    </p>
+</footer>
+
+<script>
+// ============ 滚动进度条 ============
+const scrollProgress = document.getElementById('scrollProgress');
+window.addEventListener('scroll', () => {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = (scrollTop / docHeight) * 100;
+    scrollProgress.style.width = progress + '%';
+});
+
+// ============ 鼠标跟随光晕 ============
+const cursorGlow = document.getElementById('cursorGlow');
+let mouseX = 0, mouseY = 0;
+let glowX = 0, glowY = 0;
+
+document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+});
+
+function animateGlow() {
+    glowX += (mouseX - glowX) * 0.08;
+    glowY += (mouseY - glowY) * 0.08;
+    cursorGlow.style.left = glowX + 'px';
+    cursorGlow.style.top = glowY + 'px';
+    requestAnimationFrame(animateGlow);
+}
+animateGlow();
+
+// ============ 滚动显现 ============
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, index) => {
+        if (entry.isIntersecting) {
+            setTimeout(() => {
+                entry.target.classList.add('visible');
+            }, index * 80);
+        }
+    });
+}, { threshold: 0.15 });
+
+document.querySelectorAll('.reveal, .feature-card, .timeline-item').forEach(el => {
+    observer.observe(el);
+});
+
+// ============ 卡片鼠标光晕 ============
+document.querySelectorAll('.feature-card').forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        card.style.setProperty('--mouse-x', x + '%');
+        card.style.setProperty('--mouse-y', y + '%');
+    });
+});
+
+// ============ 卡片轻微 3D 倾斜 ============
+document.querySelectorAll('[data-tilt]').forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const rotateX = ((y - centerY) / centerY) * -4;
+        const rotateY = ((x - centerX) / centerX) * 4;
+        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`;
+    });
+    card.addEventListener('mouseleave', () => {
+        card.style.transform = '';
+    });
+});
+
+// ============ 平滑滚动 ============
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            e.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+});
+</script>
+</body>
+</html>
