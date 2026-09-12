@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0e1a">
+<meta name="description" content="下载畅 v2.2.0 —— 全新升级的多线程下载器，支持 B 站视频下载、断点续传、自定义壁纸。">
 <title>下载畅 v2.2.0</title>
 <style>
     /* ============ 全局重置 ============ */
@@ -28,6 +30,9 @@
         position: relative;
         min-height: 100vh;
     }
+
+    /* ============ 锚点偏移：避免被固定导航遮挡（修复 #2） ============ */
+    section[id] { scroll-margin-top: 90px; }
 
     /* ============ 动态渐变背景 ============ */
     body::before {
@@ -58,18 +63,24 @@
         -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
     }
 
+    /* ============ 鼠标跟随光晕（修复 #4） ============ */
     .cursor-glow {
         position: fixed;
+        left: 0;
+        top: 0;
         width: 500px;
         height: 500px;
         border-radius: 50%;
         pointer-events: none;
         background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
-        transform: translate(-50%, -50%);
-        transition: opacity 0.3s;
+        transform: translate3d(0, 0, 0) translate(-50%, -50%);
+        opacity: 0;                       /* 初始隐藏，避免左上角出现光斑 */
+        transition: opacity 0.4s ease;
         z-index: 0;
         mix-blend-mode: screen;
+        will-change: transform;
     }
+    .cursor-glow.active { opacity: 1; }
 
     .scroll-progress {
         position: fixed;
@@ -485,22 +496,33 @@
         color: #22d3ee;
     }
 
-    /* ============ 股东名单（折叠） ============ */
+    /* ============ 股东名单（折叠，修复 #3） ============ */
     #shareholders {
         padding: 4rem 2rem 2rem;
     }
     .shareholders-toggle {
+        /* 修复 #7：改用 button，重置默认样式 */
+        display: block;
+        width: 100%;
+        font: inherit;
+        color: inherit;
+        background: none;
         text-align: center;
         cursor: pointer;
         user-select: none;
         padding: 2rem 1rem;
         border-radius: 24px;
-        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: background 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                    border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         border: 1px solid transparent;
     }
     .shareholders-toggle:hover {
         background: rgba(99, 102, 241, 0.05);
         border-color: rgba(99, 102, 241, 0.15);
+    }
+    .shareholders-toggle:focus-visible {
+        outline: 2px solid #818cf8;
+        outline-offset: 4px;
     }
     .toggle-hint {
         display: inline-flex;
@@ -521,18 +543,29 @@
     .shareholders-toggle.expanded .toggle-arrow {
         transform: rotate(180deg);
     }
+
+    /* 用 grid-template-rows 做自适应高度折叠，不再依赖固定的 max-height */
     .shareholders-content {
-        max-height: 0;
-        overflow: hidden;
+        display: grid;
+        grid-template-rows: 0fr;
         opacity: 0;
-        transition: max-height 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+        transition: grid-template-rows 0.8s cubic-bezier(0.16, 1, 0.3, 1),
                     opacity 0.6s ease;
     }
+    .shareholders-content > .shareholders-grid {
+        overflow: hidden;
+        min-height: 0;
+        padding-top: 0;
+        transition: padding-top 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
     .shareholders-content.expanded {
-        max-height: 2000px;
+        grid-template-rows: 1fr;
         opacity: 1;
+    }
+    .shareholders-content.expanded > .shareholders-grid {
         padding-top: 2rem;
     }
+
     .shareholders-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -555,7 +588,10 @@
         overflow: hidden;
         opacity: 0;
         transform: translateY(30px);
-        transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                    border-color 0.5s,
+                    box-shadow 0.5s;
     }
     .shareholders-content.expanded .shareholder-card {
         opacity: 1;
@@ -578,7 +614,6 @@
     .shareholder-card:hover::before { opacity: 1; }
     .shareholder-card:hover {
         border-color: rgba(168, 85, 247, 0.45);
-        transform: translateY(-8px);
         box-shadow: 0 30px 60px -20px rgba(168, 85, 247, 0.5);
     }
     .avatar-wrap {
@@ -788,6 +823,34 @@
         .hero-buttons { flex-direction: column; width: 100%; }
         .btn { width: 100%; justify-content: center; }
     }
+
+    /* ============ 无障碍：尊重系统的减少动效设置（修复 #8） ============ */
+    @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        body::before,
+        .floating-orb,
+        .hero h1,
+        .nav-logo::before,
+        .hero-badge .dot,
+        .download-card::before,
+        .scroll-hint .mouse::before {
+            animation: none !important;
+        }
+        .cursor-glow { display: none; }
+        .reveal,
+        .feature-card,
+        .timeline-item {
+            opacity: 1 !important;
+            transform: none !important;
+            transition: none !important;
+        }
+        .shareholders-content,
+        .shareholders-content > .shareholders-grid,
+        .shareholder-card,
+        .avatar-wrap {
+            transition: none !important;
+        }
+    }
 </style>
 </head>
 <body>
@@ -796,7 +859,7 @@
 <div class="scroll-progress" id="scrollProgress"></div>
 
 <!-- 鼠标跟随光晕 -->
-<div class="cursor-glow" id="cursorGlow"></div>
+<div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
 
 <!-- 顶部导航 -->
 <nav>
@@ -954,14 +1017,19 @@
 <!-- 股东名单（最底部，折叠） -->
 <section id="shareholders">
     <div class="container">
-        <div class="shareholders-toggle" id="shareholdersToggle">
+        <!-- 修复 #7：改用 button + aria 属性，支持键盘操作 -->
+        <button class="shareholders-toggle"
+                id="shareholdersToggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="shareholdersContent">
             <div class="section-label">股东名单</div>
             <h2 class="section-title">这里只有滚木</h2>
             <div class="toggle-hint">
                 <span id="toggleHintText">点击展开</span>
-                <span class="toggle-arrow">▼</span>
+                <span class="toggle-arrow" aria-hidden="true">▼</span>
             </div>
-        </div>
+        </button>
 
         <div class="shareholders-content" id="shareholdersContent">
             <div class="shareholders-grid">
@@ -1039,55 +1107,88 @@
 
 <!-- 页脚 -->
 <footer>
-    <p>© 2026 下载畅 由各位滚木 <a href="#">levenary</a> 匠心打造</p>
+    <p>© 2026 下载畅 由各位滚木 <a href="https://github.com/KWlevenary" target="_blank" rel="noopener">levenary</a> 匠心打造</p>
     <p style="margin-top: 0.6rem;">
-        <a href="https://github.com/KWlevenary" target="_blank">GitHub</a> ·
+        <a href="https://github.com/KWlevenary" target="_blank" rel="noopener">GitHub</a> ·
     </p>
 </footer>
 
 <script>
-// ============ 滚动进度条 ============
+// ============ 滚动进度条（用 rAF 节流，避免高频 reflow） ============
 const scrollProgress = document.getElementById('scrollProgress');
-window.addEventListener('scroll', () => {
+let scrollTicking = false;
+
+function updateScrollProgress() {
     const scrollTop = window.scrollY;
     const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-    const progress = (scrollTop / docHeight) * 100;
+    const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
     scrollProgress.style.width = progress + '%';
-});
+    scrollTicking = false;
+}
 
-// ============ 鼠标跟随光晕 ============
+window.addEventListener('scroll', () => {
+    if (!scrollTicking) {
+        scrollTicking = true;
+        requestAnimationFrame(updateScrollProgress);
+    }
+}, { passive: true });
+updateScrollProgress();
+
+// ============ 鼠标跟随光晕（修复 #4 + #6） ============
 const cursorGlow = document.getElementById('cursorGlow');
 let mouseX = 0, mouseY = 0;
 let glowX = 0, glowY = 0;
+let glowDirty = false;
 
 document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
+    glowDirty = true;
+    cursorGlow.classList.add('active');
+}, { passive: true });
+
+document.addEventListener('mouseleave', () => {
+    cursorGlow.classList.remove('active');
 });
 
 function animateGlow() {
-    glowX += (mouseX - glowX) * 0.08;
-    glowY += (mouseY - glowY) * 0.08;
-    cursorGlow.style.left = glowX + 'px';
-    cursorGlow.style.top = glowY + 'px';
+    // 只有鼠标移动过、或还在追赶时才计算，鼠标静止即停止更新
+    if (glowDirty) {
+        glowX += (mouseX - glowX) * 0.08;
+        glowY += (mouseY - glowY) * 0.08;
+
+        if (Math.abs(mouseX - glowX) < 0.1 && Math.abs(mouseY - glowY) < 0.1) {
+            glowX = mouseX;
+            glowY = mouseY;
+            glowDirty = false;
+        }
+
+        // 用 transform 而不是 left/top，避免触发 layout
+        cursorGlow.style.transform =
+            `translate3d(${glowX}px, ${glowY}px, 0) translate(-50%, -50%)`;
+    }
     requestAnimationFrame(animateGlow);
 }
-animateGlow();
+requestAnimationFrame(animateGlow);
 
-// ============ 滚动显现 ============
+// ============ 滚动显现（修复 #5） ============
+const revealEls = document.querySelectorAll('.reveal, .feature-card, .timeline-item');
+
+// 用元素自身的全局序号做错开，避免每批 entries 的 index 都从 0 开始
+revealEls.forEach((el, i) => { el.dataset.revealIndex = i; });
+
 const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry, index) => {
-        if (entry.isIntersecting) {
-            setTimeout(() => {
-                entry.target.classList.add('visible');
-            }, index * 80);
-        }
+    entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const i = Number(entry.target.dataset.revealIndex) || 0;
+        setTimeout(() => {
+            entry.target.classList.add('visible');
+        }, (i % 6) * 80);
+        observer.unobserve(entry.target);   // 只触发一次
     });
 }, { threshold: 0.15 });
 
-document.querySelectorAll('.reveal, .feature-card, .timeline-item').forEach(el => {
-    observer.observe(el);
-});
+revealEls.forEach(el => observer.observe(el));
 
 // ============ 卡片鼠标光晕 ============
 document.querySelectorAll('.feature-card, .shareholder-card').forEach(card => {
@@ -1097,7 +1198,7 @@ document.querySelectorAll('.feature-card, .shareholder-card').forEach(card => {
         const y = ((e.clientY - rect.top) / rect.height) * 100;
         card.style.setProperty('--mouse-x', x + '%');
         card.style.setProperty('--mouse-y', y + '%');
-    });
+    }, { passive: true });
 });
 
 // ============ 卡片轻微 3D 倾斜 ============
@@ -1110,11 +1211,10 @@ document.querySelectorAll('[data-tilt]').forEach(card => {
         const centerY = rect.height / 2;
         const rotateX = ((y - centerY) / centerY) * -4;
         const rotateY = ((x - centerX) / centerX) * 4;
-        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`;
+        card.style.transform =
+            `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`;
     });
-    card.addEventListener('mouseleave', () => {
-        card.style.transform = '';
-    });
+    card.addEventListener('mouseleave', () => { card.style.transform = ''; });
 });
 
 // ============ 股东卡片 3D 倾斜 ============
@@ -1127,11 +1227,10 @@ document.querySelectorAll('.shareholder-card').forEach(card => {
         const centerY = rect.height / 2;
         const rotateX = ((y - centerY) / centerY) * -5;
         const rotateY = ((x - centerX) / centerX) * 5;
-        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`;
+        card.style.transform =
+            `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`;
     });
-    card.addEventListener('mouseleave', () => {
-        card.style.transform = '';
-    });
+    card.addEventListener('mouseleave', () => { card.style.transform = ''; });
 });
 
 // ============ 股东名单折叠 ============
@@ -1141,12 +1240,14 @@ const toggleHintText = document.getElementById('toggleHintText');
 
 function expandShareholders() {
     shareholdersToggle.classList.add('expanded');
+    shareholdersToggle.setAttribute('aria-expanded', 'true');
     shareholdersContent.classList.add('expanded');
     toggleHintText.textContent = '点击收起';
 }
 
 function collapseShareholders() {
     shareholdersToggle.classList.remove('expanded');
+    shareholdersToggle.setAttribute('aria-expanded', 'false');
     shareholdersContent.classList.remove('expanded');
     toggleHintText.textContent = '点击展开';
 }
@@ -1159,23 +1260,29 @@ shareholdersToggle.addEventListener('click', () => {
     }
 });
 
-// ============ 导航点击“股东”时自动展开并滚动 ============
-document.getElementById('navShareholders').addEventListener('click', (e) => {
-    e.preventDefault();
-    expandShareholders();
-    setTimeout(() => {
-        document.getElementById('shareholders').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-});
-
-// ============ 平滑滚动 ============
-document.querySelectorAll('a[href^="#"]:not(#navShareholders)').forEach(anchor => {
+// ============ 平滑滚动（修复 #1：跳过裸 "#"，合并股东锚点逻辑） ============
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            e.preventDefault();
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const href = this.getAttribute('href');
+
+        // 关键修复：href="#" 或空值直接跳过，避免 querySelector('#') 抛 DOMException
+        if (!href || href === '#') return;
+
+        const target = document.querySelector(href);
+        if (!target) return;
+
+        e.preventDefault();
+
+        // 点击导航里的“股东”时，先展开再滚动
+        if (href === '#shareholders') {
+            expandShareholders();
+            setTimeout(() => {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+            return;
         }
+
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 });
 </script>
